@@ -23,19 +23,23 @@ class RCONClient:
         """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(5)  # Set timeout to 5 seconds
-        self.socket.connect((self.host, self.port))
+        try:
+            self.socket.connect((self.host, self.port))
+        except ConnectionRefusedError:
+            print("Server is not reachable. Connection refused.")
 
     def login(self):
         """
         Performs login/authentication with the RCON server using the provided password.
         """
-        try:
-            packet = struct.pack('<3i', 10 + len(self.password), 0, 3) + self.password.encode('utf-8') + b'\x00\x00'
-            self.socket.send(packet)
-            response = self.socket.recv(4096)
-            self.handle_response(response)
-        except (socket.timeout, ConnectionAbortedError) as e:
-            print(f"Error during login: {e}")
+        if self.socket:
+            try:
+                packet = struct.pack('<3i', 10 + len(self.password), 0, 3) + self.password.encode('utf-8') + b'\x00\x00'
+                self.socket.send(packet)
+                response = self.socket.recv(4096)
+                self.handle_response(response)
+            except (socket.timeout, ConnectionAbortedError) as e:
+                print(f"Error during login: {e}")
 
     def command(self, cmd):
         """
